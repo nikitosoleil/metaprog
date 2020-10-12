@@ -1,0 +1,21 @@
+{
+  "use_tab_character": false,
+  "tab_size": 4,
+  "indent": 2,
+  "continuation_indent": 8,
+  "keep_indents_on_empty_lines": false,
+  "spaces_within_braces": false,
+  "spaces_within_brackets": false,
+  "spaces_before_comma": false,
+  "spaces_after_comma": true,
+  "spaces_before_:": false,
+  "spaces_after_:": true,
+  "keep_maximum_blank_lines": 0,
+  "hard_wrap_at": 120,
+  "keep_line_breaks": true,
+  "keep_trailing_comma": false,
+  "ensure_right_margin_not_exceeded": false,
+  "arrays": "wrap_always",
+  "objects": "wrap_always",
+  "align": "false"
+}
