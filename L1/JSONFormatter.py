@@ -4,6 +4,8 @@ import os
 import json
 import logging
 
+from parse import parse
+
 if __name__ == '__main__':
     file_handler = logging.FileHandler('errors.log', 'w')
     file_handler.setLevel(logging.ERROR)
@@ -61,7 +63,15 @@ if __name__ == '__main__':
         mode = 'format'
         with open(args.config, 'r') as file:
             config = json.load(file)
+        logger.info(f'Configuration is {config}')
 
-    logging.info(f'Selected mode is {mode}')
-    logger.info(f'Configuration is {config}')
-    logging.error("ERROR")
+    logging.info(f'Selected mode is "{mode}"')
+
+    for file_path in files:
+        with open(file_path, 'r') as file:
+            contents = file.read()
+        parsed = parse(contents, file_path)
+        if mode == 'format':
+            formatted = format(parsed)
+            with open(file_path + '.mod', 'w') as file:
+                file.write(formatted)
