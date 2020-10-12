@@ -1,6 +1,7 @@
 import logging
 import re
 from enum import Enum
+from functools import partial
 
 string_re = r'"[^"\\\r\n]*(?:\\.[^"\\\r\n]*)*"'
 number_re = r'-?([1-9][0-9]*|0)(\.[0-9]+)?([eE][+-][0-9]+)?'
@@ -28,10 +29,11 @@ def is_value(token, what_re=all_re):
     return re.match(what_re, token) is not None
 
 
-def parse(contents, file_path):
+def parser(contents, file_path):
     tokens = []
     prv_r = 0
     n_line, prv_line_pos = 1, 0
+    contents += 'null'
     while True:
         match = re.search(all_re, contents[prv_r:])
         if match is None:
@@ -48,13 +50,22 @@ def parse(contents, file_path):
                 prv_line_pos = char_pos
         tokens.append((value, n_line, prv_r + l - prv_line_pos))
         prv_r += r
+    tokens.pop(-1)
 
     brackets = []
+    output_tokens = []
+    total_errors = 0
     state = States.START
     for token, line, char in tokens:
-        def error(message):
-            logging.error(f'{file_path}: {line} - {message}')
+        was_error = [False]
 
+        def __error(was_error, message):
+            logging.error(f'{file_path}: {line} - {message}')
+            was_error[0] = True
+
+        error = partial(__error, was_error)
+
+        # print(token, brackets, state)
         if state == States.START:
             if token == '{':
                 state = States.DICT_START
@@ -151,3 +162,13 @@ def parse(contents, file_path):
                 error('Value must be after ,')
         elif state == States.END:
             error('JSON ended')
+
+        if was_error[0]:
+            total_errors += 1
+        else:
+            output_tokens.append((token, len(brackets)))
+
+    if total_errors > 0:
+        logging.error(f'File {file_path}: found {total_errors} error(s)')
+
+    return output_tokens

@@ -4,7 +4,8 @@ import os
 import json
 import logging
 
-from parse import parse
+from parse import parser
+from format import formatter
 
 if __name__ == '__main__':
     file_handler = logging.FileHandler('errors.log', 'w')
@@ -24,6 +25,7 @@ if __name__ == '__main__':
     ap.add_argument('-f', type=str, default=None, help="JSON file(s) to format")
     ap.add_argument('-v', '--verify', action='store_true', help="Verify file syntax")
     ap.add_argument('-c', '--config', type=str, default=None, help="Format file using specified config")
+    ap.add_argument('-o', '--output', type=str, default=None, help="Output path prefix")
     args = ap.parse_args()
 
     # print(args)
@@ -70,8 +72,11 @@ if __name__ == '__main__':
     for file_path in files:
         with open(file_path, 'r') as file:
             contents = file.read()
-        parsed = parse(contents, file_path)
+        parsed = parser(contents, file_path)
         if mode == 'format':
-            formatted = format(parsed)
-            with open(file_path + '.mod', 'w') as file:
+            formatted = formatter(parsed, config)
+            output_file_path = file_path if args.output is None else os.path.join(args.output, file_path)
+            output_file_folder = os.sep.join(output_file_path.split(os.sep)[:-1])
+            os.makedirs(output_file_folder, exist_ok=True)
+            with open(output_file_path, 'w') as file:
                 file.write(formatted)
