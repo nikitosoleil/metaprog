@@ -43,7 +43,7 @@ def parser(contents, file_path):
         for i in range(l):
             char_pos = prv_r + i
             substr = contents[char_pos]
-            if not substr.isspace():
+            if not substr.isspace() or substr == '\n':
                 tokens.append((substr, n_line, char_pos - prv_line_pos))
             if substr == '\n':
                 n_line += 1
@@ -56,7 +56,14 @@ def parser(contents, file_path):
     output_tokens = []
     total_errors = 0
     state = States.START
+    prv_line = 0
     for token, line, char in tokens:
+        if token == '\n':
+            if line != prv_line:
+                output_tokens.append((token, len(brackets)))
+                prv_line = line
+            continue
+
         was_error = [False]
 
         def __error(was_error, message):
@@ -167,6 +174,7 @@ def parser(contents, file_path):
             total_errors += 1
         else:
             output_tokens.append((token, len(brackets)))
+            prv_line = line
 
     if total_errors > 0:
         logging.error(f'File {file_path}: found {total_errors} error(s)')
