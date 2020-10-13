@@ -3,7 +3,7 @@ import re
 from enum import Enum
 from functools import partial
 
-string_re = r'"[^"\\\r\n]*(?:\\.[^"\\\r\n]*)*"'
+string_re = r'"[^"\\\n]*(?:\\([ntrbfu\/\\\"])[^"\\\n]*)*"'
 number_re = r'-?([1-9][0-9]*|0)(\.[0-9]+)?([eE][+-][0-9]+)?'
 other_re = r'true|false|null'
 all_re = '|'.join([string_re, number_re, other_re])
@@ -52,16 +52,15 @@ def parser(contents, file_path):
         prv_r += r
     tokens.pop(-1)
 
+    # print(tokens)
+
     brackets = []
     output_tokens = []
     total_errors = 0
     state = States.START
-    prv_line = 0
     for token, line, char in tokens:
         if token == '\n':
-            if line != prv_line:
-                output_tokens.append((token, len(brackets)))
-                prv_line = line
+            output_tokens.append(token)
             continue
 
         was_error = [False]
@@ -72,7 +71,6 @@ def parser(contents, file_path):
 
         error = partial(__error, was_error)
 
-        # print(token, brackets, state)
         if state == States.START:
             if token == '{':
                 state = States.DICT_START
@@ -173,7 +171,7 @@ def parser(contents, file_path):
         if was_error[0]:
             total_errors += 1
         else:
-            output_tokens.append((token, len(brackets)))
+            output_tokens.append(token)
             prv_line = line
 
     if total_errors > 0:

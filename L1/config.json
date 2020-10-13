@@ -1,8 +1,8 @@
 {
-  "use_tab_character": false,
+  "use_tab_character": true,
   "tab_size": 4,
   "indent": 2,
-  "keep_indents_on_empty_lines": true,
+  "keep_indents_on_empty_lines": false,
   "spaces_within_braces": false,
   "spaces_within_brackets": false,
   "spaces_before_comma": false,
