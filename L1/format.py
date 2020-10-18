@@ -29,6 +29,7 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
     consequent_n = 0
     indentation = ''
     prefix_cur, prefix_next = '', ''
+    prefixes = ''
     brackets = []
     for token, prv_token, prv_token_true, nxt_token, nxt_token_true, whitespace_prefix, line in \
             zip(parsed, prv_tokens, prv_tokens_true, nxt_tokens, nxt_tokens_true,
@@ -99,29 +100,31 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
             token = ''
 
         final_prefix = prefix_cur + prefix
-        final_append = final_prefix + token
 
         if wrapping_method == 'wrap_if_long':
-            if not final_append.startswith('\n') and \
-                    len((result + final_append).split('\n')[-1]) > config['hard_wrap_at']:
-                final_append = '\n' + indentation + final_append.strip()
+            if not final_prefix.startswith('\n') and \
+                    len((result + final_prefix + token).split('\n')[-1]) > config['hard_wrap_at']:
+                final_prefix = '\n' + indentation + final_prefix.strip()
 
-        result += final_append
+        result += final_prefix + token
+        prefixes += final_prefix
 
         prefix_cur = prefix_next
         prefix_next = ''
 
-        if whitespace_prefix is not None and final_prefix != whitespace_prefix:
-            l, r = 0, 0
-            for i in range(min(len(final_prefix), len(whitespace_prefix))):
-                if final_prefix[i] == whitespace_prefix[i] and l == i:
-                    l = i + 1
-                if final_prefix[-i - 1] == whitespace_prefix[-i - 1] and r == -i:
-                    r = -i - 1
-            r = max(len(final_prefix), len(whitespace_prefix)) if r == 0 else -r
-            final_prefix, whitespace_prefix = final_prefix[l:r], whitespace_prefix[l:r]
-            if final_prefix != whitespace_prefix:
-                logging.error(f'{file_path}: {line} - FORMAT ERROR: ' + error_reasoning +
-                              f'must be {repr(final_prefix)}, found {repr(whitespace_prefix)}')
+        if whitespace_prefix is not None:
+            if prefixes != whitespace_prefix:
+                l, r = 0, 0
+                for i in range(min(len(prefixes), len(whitespace_prefix))):
+                    if prefixes[i] == whitespace_prefix[i] and l == i:
+                        l = i + 1
+                    if prefixes[-i - 1] == whitespace_prefix[-i - 1] and r == -i:
+                        r = -i - 1
+                r = max(len(prefixes), len(whitespace_prefix)) if r == 0 else -r
+                prefixes, whitespace_prefix = prefixes[l:r], whitespace_prefix[l:r]
+                if prefixes != whitespace_prefix:
+                    logging.error(f'{file_path}: {line} - FORMAT ERROR: ' + error_reasoning +
+                                  f'must be {repr(prefixes)}, found {repr(whitespace_prefix)}')
+            prefixes = ''
 
     return result
