@@ -1,6 +1,6 @@
 # JSONFormatter
 
-A simple tool for verifying & formatting .json files
+A simple tool for verifying & formatting JSON files
 
 ## Table of contents
 
@@ -42,6 +42,9 @@ Formatting config is a JSON file with following parameters:
 - spaces_before_: - boolean, whether to put a space before colon :
 - spaces_after_: - boolean, whether to put a space after colon :
 - keep_maximum_blank_lines - integer, how many of consequent empty lines are allowed
+- hard_wrap_at - minimum length of line to apply wrapping to
+- wrap_arrays - wrapping method to apply to arrays
+- wrap_objects - wrapping method to apply to objects
 
 ### Config example
 
@@ -55,7 +58,10 @@ Formatting config is a JSON file with following parameters:
       "spaces_before_comma": false,
       "spaces_before_:": false,
       "spaces_after_:": true,
-      "keep_maximum_blank_lines": 2
+      "keep_maximum_blank_lines": 2,
+      "hard_wrap_at": 40,
+      "wrap_arrays": "wrap_if_long",
+      "wrap_objects": "wrap_always"
     }
 
 # Requirements

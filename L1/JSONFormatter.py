@@ -19,7 +19,7 @@ if __name__ == '__main__':
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    ap = argparse.ArgumentParser(description="A simple tool for verifying & formatting .json files")
+    ap = argparse.ArgumentParser(description="A simple tool for verifying & formatting JSON files")
     ap.add_argument('config', type=str, help="Path to formatting config")
     ap.add_argument('-p', type=str, default=None, help="Path to project to format JSON files in")
     ap.add_argument('-d', type=str, default=None, help="Directory to format JSON files in")

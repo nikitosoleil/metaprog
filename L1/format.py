@@ -7,9 +7,9 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
         augemented.append(cur)
         augemented_whitespace_prefixes.append(prf)
         augmented_lines.append(line)
-        if (cur in {'{', '[', ','} and nxt != '\n') or \
+        if (cur in {'{', '[', ','} and nxt not in {'\n', '}', ']'}) or \
                 (cur in {']', '}'} and nxt not in {'\n', ','}) or \
-                (nxt in {']', '}'} and cur != '\n'):
+                (nxt in {']', '}'} and cur not in {'\n', '[', '{'}):
             augemented.append('\n')
             augemented_whitespace_prefixes.append(None)
             augmented_lines.append(None)
@@ -27,20 +27,27 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
 
     result = ''
     consequent_n = 0
-    level = 0
+    indentation = ''
     prefix_cur, prefix_next = '', ''
+    brackets = []
     for token, prv_token, prv_token_true, nxt_token, nxt_token_true, whitespace_prefix, line in \
             zip(parsed, prv_tokens, prv_tokens_true, nxt_tokens, nxt_tokens_true,
                 parsed_whitespace_prefixes, parsed_lines):
         if token in {'{', '['}:
-            level += 1
+            brackets.append(token)
         if token in {'}', ']'}:
-            level -= 1
+            brackets.pop(-1)
+
+        last_bracket = brackets[-1] if len(brackets) != 0 else None
+        next_bracket = None if last_bracket is None else ']' \
+            if last_bracket == '[' else '}'
+        wrapping_method = None if last_bracket is None else config['wrap_arrays'] \
+            if last_bracket == '[' else config['wrap_objects']
 
         error_reasoning = ''
 
         if token == '\n':
-            spaces = level * config['indent']
+            spaces = len(brackets) * config['indent']
             if nxt_token in {'}', ']'}:
                 spaces -= config['indent']
             tabs = 0
@@ -55,7 +62,6 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
                     prefix_next += indentation
             else:
                 token = ''
-            consequent_n += 1
         else:
             consequent_n = 0
             if token == ',':
@@ -79,12 +85,29 @@ def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, confi
                 prefix = ''
 
         if token == '\n':
-            if consequent_n <= config['keep_maximum_blank_lines'] + 1:
+            if wrapping_method in {'wrap_if_long'} and prv_token_true == ',' and nxt_token_true != '\n':
+                prefix_next = ' '
+            elif wrapping_method in {'do_not_wrap'} and prv_token_true == ',':
+                prefix_next = ' '
+            elif wrapping_method in {'do_not_wrap'} and (prv_token in {',', last_bracket} or nxt_token == next_bracket):
+                prefix_next = ''
+            elif consequent_n <= config['keep_maximum_blank_lines']:
+                consequent_n += 1
                 prefix_next = '\n' + prefix_next
+            elif config['keep_indents_on_empty_lines']:
+                prefix_next = ''
             token = ''
 
         final_prefix = prefix_cur + prefix
-        result += final_prefix + token
+        final_append = final_prefix + token
+
+        if wrapping_method == 'wrap_if_long':
+            if not final_append.startswith('\n') and \
+                    len((result + final_append).split('\n')[-1]) > config['hard_wrap_at']:
+                final_append = '\n' + indentation + final_append.strip()
+
+        result += final_append
+
         prefix_cur = prefix_next
         prefix_next = ''
 
