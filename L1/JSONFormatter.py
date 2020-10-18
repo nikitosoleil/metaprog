@@ -19,16 +19,15 @@ if __name__ == '__main__':
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    ap = argparse.ArgumentParser(description="A simple tool for formatting .json files")
+    ap = argparse.ArgumentParser(description="A simple tool for verifying & formatting .json files")
+    ap.add_argument('config', type=str, help="Path to formatting config")
     ap.add_argument('-p', type=str, default=None, help="Path to project to format JSON files in")
     ap.add_argument('-d', type=str, default=None, help="Directory to format JSON files in")
     ap.add_argument('-f', type=str, default=None, help="JSON file(s) to format")
-    ap.add_argument('-v', '--verify', action='store_true', help="Verify file syntax")
-    ap.add_argument('-c', '--config', type=str, default=None, help="Format file using specified config")
-    ap.add_argument('-o', '--output', type=str, default=None, help="Output path prefix")
+    ap.add_argument('-v', '--verify', action='store_true', help="Verify file syntax & formatting")
+    ap.add_argument('-o', '--output', action='store_true', help="Output formatted files")
+    ap.add_argument('--output-prefix', type=str, default=None, help="Output path prefix")
     args = ap.parse_args()
-
-    # print(args)
 
     not_nones = [arg for arg in ['p', 'd', 'f'] if getattr(args, arg) is not None]
 
@@ -51,31 +50,25 @@ if __name__ == '__main__':
 
     logging.info(f'Found {len(files)} files')
 
-    not_nones = [arg for arg in ['verify', 'config'] if getattr(args, arg) not in {None, False}]
+    not_nones = [arg for arg in ['verify', 'output'] if getattr(args, arg) not in {None, False}]
 
     if len(not_nones) != 1:
-        raise ValueError('One and only one argument in (v/verify, c/config) must be specified')
+        raise ValueError('One and only one argument in (v/verify, o/output) must be specified')
 
-    arg = not_nones[0]
-
-    if arg == 'verify':
-        mode = 'verify'
-        config = None
-    else:
-        mode = 'format'
-        with open(args.config, 'r') as file:
-            config = json.load(file)
-        logger.info(f'Configuration is {config}')
-
+    mode = not_nones[0]
     logging.info(f'Selected mode is "{mode}"')
+
+    with open(args.config, 'r') as file:
+        config = json.load(file)
+    logger.info(f'Configuration is {config}')
 
     for file_path in files:
         with open(file_path, 'r') as file:
             contents = file.read()
         parsed = parser(contents, file_path)
-        if mode == 'format':
-            formatted = formatter(*parsed, file_path, config)
-            output_file_path = file_path if args.output is None else os.path.join(args.output, file_path)
+        formatted = formatter(*parsed, file_path, config)
+        if mode == 'output':
+            output_file_path = file_path if args.output_prefix is None else os.path.join(args.output_prefix, file_path)
             output_file_folder = os.sep.join(output_file_path.split(os.sep)[:-1])
             os.makedirs(output_file_folder, exist_ok=True)
             with open(output_file_path, 'w') as file:

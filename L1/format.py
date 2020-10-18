@@ -2,7 +2,6 @@ import logging
 
 
 def formatter(parsed, parsed_whitespace_prefixes, parsed_lines, file_path, config):
-    # print(len(parsed), len(parsed_whitespace_prefixes))
     augemented, augemented_whitespace_prefixes, augmented_lines = [], [], []
     for cur, nxt, prf, line in zip(parsed, parsed[1:] + [None], parsed_whitespace_prefixes, parsed_lines):
         augemented.append(cur)
