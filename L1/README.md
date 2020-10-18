@@ -32,19 +32,21 @@ A simple tool for verifying & formatting JSON files
 
 Formatting config is a JSON file with following parameters:
 
-- use_tab_character - boolean, whether to use tab character instead of spaces
-- tab_size - integer, number of spaces to replace with a tab character
-- indent - integer, number of spaces to use for a single level indentation
-- keep_indents_on_empty_lines - boolean, whether to fill empty lines with indenting tabs or spaces
-- spaces_within_braces - boolean, whether to separate two empty braces {} with a space
-- spaces_within_brackets - boolean, whether to separate two empty brackets [] with a space
-- spaces_before_comma - boolean, whether to put a space before comma ,
-- spaces_before_: - boolean, whether to put a space before colon :
-- spaces_after_: - boolean, whether to put a space after colon :
-- keep_maximum_blank_lines - integer, how many of consequent empty lines are allowed
-- hard_wrap_at - minimum length of line to apply wrapping to
-- wrap_arrays - wrapping method to apply to arrays
-- wrap_objects - wrapping method to apply to objects
+| Parameter                   | Type    | Description                                               |
+|-----------------------------|---------|-----------------------------------------------------------|
+| use_tab_character           | boolean | whether to use tab character instead of spaces            |
+| tab_size                    | integer | number of spaces to replace with a tab character          |
+| indent                      | integer | number of spaces to use for a single level indentation    |
+| keep_indents_on_empty_lines | boolean | whether to fill empty lines with indenting tabs or spaces |
+| spaces_within_braces        | boolean | whether to separate two empty braces {} with a space      |
+| spaces_within_brackets      | boolean | whether to separate two empty brackets [] with a space    |
+| spaces_before_comma         | boolean | whether to put a space before comma ,                     |
+| spaces_before_:             | boolean | whether to put a space before colon :                     |
+| spaces_after_:              | boolean | whether to put a space after colon :                      |
+| keep_maximum_blank_lines    | integer | how many of consequent empty lines are allowed            |
+| hard_wrap_at                | integer | minimum length of line to apply wrapping to               |
+| wrap_arrays                 | string  | wrapping method to apply to arrays                        |
+| wrap_objects                | string  | wrapping method to apply to objects                       |
 
 ### Config example
 
