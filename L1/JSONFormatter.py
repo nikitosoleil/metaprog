@@ -74,7 +74,7 @@ if __name__ == '__main__':
             contents = file.read()
         parsed = parser(contents, file_path)
         if mode == 'format':
-            formatted = formatter(parsed, config)
+            formatted = formatter(*parsed, file_path, config)
             output_file_path = file_path if args.output is None else os.path.join(args.output, file_path)
             output_file_folder = os.sep.join(output_file_path.split(os.sep)[:-1])
             os.makedirs(output_file_folder, exist_ok=True)

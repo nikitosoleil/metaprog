@@ -22,7 +22,7 @@ class States(Enum):
     ARRAY_VALUE = 8
     ARRAY_COMMA = 9
 
-    END = 100
+    END = 10
 
 
 def is_value(token, what_re=all_re):
@@ -43,8 +43,8 @@ def parser(contents, file_path):
         for i in range(l):
             char_pos = prv_r + i
             substr = contents[char_pos]
-            if not substr.isspace() or substr == '\n':
-                tokens.append((substr, n_line, char_pos - prv_line_pos))
+            # if not substr.isspace() or substr == '\n':
+            tokens.append((substr, n_line, char_pos - prv_line_pos))
             if substr == '\n':
                 n_line += 1
                 prv_line_pos = char_pos
@@ -55,18 +55,22 @@ def parser(contents, file_path):
     # print(tokens)
 
     brackets = []
-    output_tokens = []
-    total_errors = 0
+    output_tokens, output_whitespace_prefixes, output_lines = [], [], []
     state = States.START
+    whitespace_prefix = ''
     for token, line, char in tokens:
-        if token == '\n':
-            output_tokens.append(token)
+        if token.isspace():
+            whitespace_prefix += token
+            if token == '\n':
+                output_tokens.append(token)
+                output_whitespace_prefixes.append(None)
+                output_lines.append(line)
             continue
 
         was_error = [False]
 
         def __error(was_error, message):
-            logging.error(f'{file_path}: {line} - {message}')
+            logging.error(f'{file_path}: {line} - SYNTAX ERROR: {message}')
             was_error[0] = True
 
         error = partial(__error, was_error)
@@ -168,13 +172,10 @@ def parser(contents, file_path):
         elif state == States.END:
             error('JSON ended')
 
-        if was_error[0]:
-            total_errors += 1
-        else:
+        if not was_error[0]:
             output_tokens.append(token)
-            prv_line = line
+            output_whitespace_prefixes.append(whitespace_prefix)
+            output_lines.append(line)
+            whitespace_prefix = ''
 
-    if total_errors > 0:
-        logging.error(f'File {file_path}: found {total_errors} error(s)')
-
-    return output_tokens
+    return output_tokens, output_whitespace_prefixes, output_lines
