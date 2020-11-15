@@ -2,7 +2,7 @@ class test_class:
     pass
 
 
-def TestFunction():
+def TestFunction(Asd):
     pass
 
 

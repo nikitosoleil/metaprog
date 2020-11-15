@@ -23,6 +23,7 @@ class TokenType(Enum):
     COMMENT = 3
     WHITESPACE = 4
     OBJECT = 5
+    DOCSTRING = 6
 
 
 class ObjectType(Enum):
@@ -81,14 +82,38 @@ def find_declared(parsed):
         if nxt_tokens[-i - 1][1] == TokenType.WHITESPACE:
             nxt_tokens[-i - 1] = nxt_tokens[-i]
 
-    declared = []
+    declared, new_parsed = [], []
     in_def, in_lambda, in_for, in_eq = False, False, False, False
+    convert_next, append_next = False, False
+    def_args = []
     balance = 0
-    for cur, prv, nxt, prv_white, cur_white in zip(parsed, prv_tokens, nxt_tokens, prv_tokens_white, nxt_tokens_white):
+    for i, (cur, prv, nxt, prv_white, cur_white) in \
+            enumerate(zip(parsed, prv_tokens, nxt_tokens, prv_tokens_white, nxt_tokens_white)):
+        new_parsed.append(cur)
+        if append_next:
+            indent = cur[0].split('\n')[-1]
+
+            new_s = '"""'
+            if len(def_args) != 0:
+                new_s += '\n' + indent + '\n'
+                for arg in def_args:
+                    new_s += indent + f':param {arg}:\n'
+                new_s += indent
+            new_s += '"""' + '\n' + indent
+
+            new_parsed.append((new_s, TokenType.DOCSTRING))
+            append_next = False
+            def_args = []
+
         if cur[1] == TokenType.WHITESPACE:
             if prv[0] != '\\' and '\n' in cur[0]:
                 in_eq = False
             continue
+
+        if convert_next:
+            new_parsed[-1] = cur[0], TokenType.DOCSTRING
+            convert_next = False
+            def_args = []
 
         if cur[1] == TokenType.NOT_PARSED:
             for c in cur[0]:
@@ -100,23 +125,31 @@ def find_declared(parsed):
                 if c == '=':
                     in_eq = True
 
-        if ':' in cur[0]:  # TODO: consider dicts as default argument values
+        if in_def and ':' in cur[0]:  # TODO: consider dicts as default argument values
+            if nxt[1] == TokenType.TRIPLE_STRING:
+                convert_next = True
+            else:
+                append_next = True
             in_def = False
-        if ':' in cur[0]:
+        if in_lambda and ':' in cur[0]:
             in_lambda = False
-        if cur[0] == 'in':
+        if in_for and cur[0] == 'in':
             in_for = False
 
-        if cur[1] == TokenType.OBJECT and balance == 0:
+        if cur[1] == TokenType.OBJECT:
             if prv is not None and prv[0] == 'class':
                 declared.append((cur[0], ObjectType.CLASS))
             elif prv is not None and prv[0] == 'def':
                 declared.append((cur[0], ObjectType.FUNCTION))
-            elif (prv is not None and prv[0] == 'as') or \
-                    (nxt is not None and not in_eq and
-                     ((nxt[0][0] == '=' and (len(nxt[0]) == 1 or nxt[0][1] not in '=<>'))
-                      or nxt[0] == ',')) or \
-                    (in_def or in_lambda or in_for):
+            elif prv is not None and prv[0] == 'as':
+                declared.append((cur[0], ObjectType.VARIABLE))
+            elif nxt is not None and not in_eq and balance == 0 and \
+                    ((nxt[0][0] == '=' and (len(nxt[0]) == 1 or nxt[0][1] not in '=<>')) or nxt[0] == ','):
+                declared.append((cur[0], ObjectType.VARIABLE))
+            elif in_lambda or in_for:
+                declared.append((cur[0], ObjectType.VARIABLE))
+            elif in_def:
+                def_args.append(cur[0])
                 declared.append((cur[0], ObjectType.VARIABLE))
 
         if cur[0] == 'def':
@@ -128,7 +161,7 @@ def find_declared(parsed):
 
     # print('\n'.join(f'{d[0]}, {d[1]}' for d in declared), '\n\n\n')
 
-    return declared
+    return declared, new_parsed
 
 
 def rename(s, ot):
@@ -158,18 +191,34 @@ def rename(s, ot):
 
 
 def process(all_contents):
+    """
+    TEST
+
+    :param all_contents:
+    :return:
+    """
     all_parsed = [parse(contents) for contents in all_contents]
 
-    all_declared = {s: ot for parsed in all_parsed for (s, ot) in find_declared(parsed)}
+    all_declared = {}
+    all_new_parsed = []
+    for parsed in all_parsed:
+        declared, new_parsed = find_declared(parsed)
+        all_new_parsed.append(new_parsed)
+        for s, ot in declared:
+            all_declared[s] = ot
+
+    all_parsed = all_new_parsed
 
     all_renamed = []
     for parsed in all_parsed:
         renamed = []
         for p in parsed:
             s, tt = p
-            if s in all_declared:
+            if tt == TokenType.OBJECT and s in all_declared:
                 ot = all_declared[s]
                 s = rename(s, ot)
+            # if tt == TokenType.DOCSTRING:
+
             renamed.append((s, tt))
         all_renamed.append(renamed)
 
