@@ -3,6 +3,8 @@ import glob
 import os
 import logging
 
+from parse import process
+
 if __name__ == '__main__':
     file_handler = logging.FileHandler('errors.log', 'w')
     file_handler.setLevel(logging.ERROR)
@@ -53,13 +55,16 @@ if __name__ == '__main__':
     mode = not_nones[0]
     logging.info(f'Selected mode is "{mode}"')
 
+    all_contents = []
     for file_path in files:
         with open(file_path, 'r') as file:
             contents = file.read()
+        all_contents.append(contents)
 
-        fixed = None
+    results = process(all_contents)
 
-        if mode == 'output':
+    if mode == 'output':
+        for file_path, fixed in zip(files, results):
             output_file_path = file_path if args.output_prefix is None else os.path.join(args.output_prefix, file_path)
             output_file_folder = os.sep.join(output_file_path.split(os.sep)[:-1])
             os.makedirs(output_file_folder, exist_ok=True)
