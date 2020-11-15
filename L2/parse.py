@@ -1,7 +1,7 @@
 import re
 from enum import Enum
 
-re_s_single_no_prefix = r"[\'\"][^\"\\\n]*(?:\\([ntrbfav\/\\\"'])[^\"\\\n]*)*[\'\"]"
+re_s_single_no_prefix = r"[\'\"][^\"\'\\\n]*(?:\\([ntrbfav\/\\\"\'])[^\"\'\\\n]*)*[\'\"]"
 re_s_triple_no_prefix = r"(\"\"\"|\'\'\')[^\"\'\\]*(?:\\([ntrbfav\/\\\"\'])[^\"\'\\]*)*(\"\"\"|\'\'\')"
 re_s_single = r"[bru]?" + re_s_single_no_prefix
 re_s_triple = r"[bru]?" + re_s_triple_no_prefix
@@ -64,7 +64,9 @@ def parse(contents):
                                (re_whitespaces, TokenType.WHITESPACE),
                                (re_tokens, TokenType.OBJECT)]:
         parsed = __split(parsed, re_cur, match_type)
-    
+        # print([((c, tt) if tt != TokenType.NOT_PARSED else (len(c), tt)) for c, tt in parsed], '\n\n\n')
+
+    # print([('WS' if tt == TokenType.WHITESPACE else (c, tt)) for c, tt in parsed])
     return parsed
 
 
@@ -124,12 +126,52 @@ def find_declared(parsed):
         if cur[0] == 'for':
             in_for = True
 
-    print('\n'.join(f'{d[0]}, {d[1]}' for d in declared), '\n\n\n')
+    # print('\n'.join(f'{d[0]}, {d[1]}' for d in declared), '\n\n\n')
 
     return declared
 
 
+def rename(s, ot):
+    new_s = s
+
+    if ot == ObjectType.VARIABLE:
+        if re.search('[a-z]', s) is None:
+            return new_s  # exception: all caps variable is a constant
+
+    pieces = []
+    cur_piece = ''
+    for c, prv_c in zip(s, '_' + s[:-1]):
+        if c == '_' or (c.isupper() and prv_c.islower()):
+            pieces.append(cur_piece)
+            cur_piece = ''
+        if c != '_':
+            cur_piece += c
+    pieces.append(cur_piece)
+
+    if ot == ObjectType.CLASS:
+        new_s = ''.join([p.lower().capitalize() for p in pieces])
+
+    if ot == ObjectType.FUNCTION or ot == ObjectType.VARIABLE:
+        new_s = '_'.join([p.lower() for p in pieces])
+
+    return new_s
+
+
 def process(all_contents):
     all_parsed = [parse(contents) for contents in all_contents]
-    all_declared = [find_declared(parsed) for parsed in all_parsed]
-    return []
+
+    all_declared = {s: ot for parsed in all_parsed for (s, ot) in find_declared(parsed)}
+
+    all_renamed = []
+    for parsed in all_parsed:
+        renamed = []
+        for p in parsed:
+            s, tt = p
+            if s in all_declared:
+                ot = all_declared[s]
+                s = rename(s, ot)
+            renamed.append((s, tt))
+        all_renamed.append(renamed)
+
+    results = [''.join([r[0] for r in renamed]) for renamed in all_renamed]
+    return results
