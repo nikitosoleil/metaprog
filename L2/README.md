@@ -6,6 +6,7 @@ A simple tool for renaming and documenting Python code according to PEP
 
 * [Installation](#installation)
 * [Usage](#usage)
+* [Functionality](#functionality)
 * [Requirements](#requirements)
 
 # Installation
@@ -28,6 +29,13 @@ A simple tool for renaming and documenting Python code according to PEP
 ### Usage example
 
     pythonccf -f examples/test*.py -o --output-prefix output
+    
+# Functionality
+
+- Verifies and converts class names to CamelCase
+- Verifies and converts function and variable names to snake_case
+- Updates usages of renamed objects in code and docstrings
+- Adds docstring templates for functions and methods in reStructured Text format
 
 # Requirements
 
