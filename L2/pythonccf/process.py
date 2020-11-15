@@ -34,7 +34,7 @@ class ObjectType(Enum):
 
 def __split(parsed, re_cur, match_type):
     new_parsed = []
-    for content, token_type in parsed:
+    for content, token_type, line_start in parsed:
         if token_type == TokenType.NOT_PARSED:
             prv_end = 0
 
@@ -43,22 +43,26 @@ def __split(parsed, re_cur, match_type):
                 not_parsed = content[prv_end:start]
 
                 if len(not_parsed) > 0:
-                    new_parsed.append((not_parsed, TokenType.NOT_PARSED))
+                    new_parsed.append((not_parsed, TokenType.NOT_PARSED, line_start))
 
-                new_parsed.append((content[start:end], match_type))
+                line_start += not_parsed.count('\n')
+
+                new_parsed.append((content[start:end], match_type, line_start))
+
+                line_start += content[start:end].count('\n')
 
                 prv_end = end
 
             not_parsed = content[prv_end:]
             if len(not_parsed) > 0:
-                new_parsed.append((not_parsed, TokenType.NOT_PARSED))
+                new_parsed.append((not_parsed, TokenType.NOT_PARSED, line_start))
         else:
-            new_parsed.append((content, token_type))
+            new_parsed.append((content, token_type, line_start))
     return new_parsed
 
 
 def parse(contents):
-    parsed = [(contents, TokenType.NOT_PARSED)]
+    parsed = [(contents, TokenType.NOT_PARSED, 1)]
     for re_cur, match_type in [(f"({re_s_triple})|({re_s_triple_f_prefix})", TokenType.TRIPLE_STRING),
                                (f"({re_s_single})|({re_s_single_f_prefix})", TokenType.SINGLE_STRING),
                                (re_comments, TokenType.COMMENT),
@@ -67,7 +71,7 @@ def parse(contents):
         parsed = __split(parsed, re_cur, match_type)
         # print([((c, tt) if tt != TokenType.NOT_PARSED else (len(c), tt)) for c, tt in parsed], '\n\n\n')
 
-    # print([('WS' if tt == TokenType.WHITESPACE else (c, tt)) for c, tt in parsed])
+    # print([('WS' if tt == TokenType.WHITESPACE else (c, tt, line)) for c, tt, line in parsed])
     return parsed
 
 
@@ -101,7 +105,7 @@ def find_declared(parsed):
                 new_s += indent
             new_s += '"""' + '\n' + indent
 
-            new_parsed.append((new_s, TokenType.DOCSTRING))
+            new_parsed.append((new_s, TokenType.DOCSTRING, None))
             append_next = False
             def_args = []
 
@@ -111,7 +115,7 @@ def find_declared(parsed):
             continue
 
         if convert_next:
-            new_parsed[-1] = cur[0], TokenType.DOCSTRING
+            new_parsed[-1] = cur[0], TokenType.DOCSTRING, None
             convert_next = False
             def_args = []
 
@@ -190,13 +194,7 @@ def rename(s, ot):
     return new_s
 
 
-def process(all_contents):
-    """
-    TEST
-
-    :param all_contents:
-    :return:
-    """
+def process(all_contents, files):
     all_parsed = [parse(contents) for contents in all_contents]
 
     all_declared = {}
@@ -209,18 +207,25 @@ def process(all_contents):
 
     all_parsed = all_new_parsed
 
-    all_renamed = []
-    for parsed in all_parsed:
+    old_new = {}
+    for s, ot in all_declared.items():
+        new_s = rename(s, ot)
+        if s != new_s:
+            old_new[s] = new_s
+
+    all_renamed, msgs = [], []
+    for parsed, file_path in zip(all_parsed, files):
         renamed = []
         for p in parsed:
-            s, tt = p
-            if tt == TokenType.OBJECT and s in all_declared:
-                ot = all_declared[s]
-                s = rename(s, ot)
-            # if tt == TokenType.DOCSTRING:
-
+            s, tt, line = p
+            if tt == TokenType.OBJECT and s in old_new:
+                msgs.append((file_path, line, all_declared[s].name, s, old_new[s]))
+                s = old_new[s]
+            if tt == TokenType.DOCSTRING:
+                for old, new in old_new.items():
+                    s = s.replace(old, new)
             renamed.append((s, tt))
         all_renamed.append(renamed)
 
     results = [''.join([r[0] for r in renamed]) for renamed in all_renamed]
-    return results
+    return results, msgs
