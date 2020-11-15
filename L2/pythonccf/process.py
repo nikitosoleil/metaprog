@@ -65,17 +65,34 @@ def process(all_contents: List[str], files: List[str]) -> (List[str], List):
         if s != new_s:
             old_new[s] = new_s
 
+    prv_line = 0
     all_renamed, msgs = [], []
     for parsed, file_path in zip(all_parsed, files):
         renamed = []
         for p in parsed:
             s, tt, line = p
             if tt == TokenType.OBJECT and s in old_new:
-                msgs.append((file_path, line, all_declared[s].name, s, old_new[s]))
+                msgs.append({'type': 'rename',
+                             'file_path': file_path,
+                             'line': line,
+                             'object_type': all_declared[s].name,
+                             'old_token': s,
+                             'new_token': old_new[s]})
                 s = old_new[s]
             if tt == TokenType.DOCSTRING:
+                old_s = s
                 for old, new in old_new.items():
                     s = s.replace(old, new)
+                if line is not None:
+                    if old_s != s:
+                        msgs.append({'type': 'fix_docstring',
+                                     'file_path': file_path,
+                                     'line': line})
+                else:
+                    msgs.append({'type': 'add_docstring',
+                                 'file_path': file_path,
+                                 'line': prv_line})
+            prv_line = line
             renamed.append((s, tt))
         all_renamed.append(renamed)
 

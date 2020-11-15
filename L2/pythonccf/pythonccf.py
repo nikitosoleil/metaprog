@@ -63,8 +63,14 @@ def main():
         all_contents.append(contents)
 
     results, msgs = process(all_contents, files)
-    for file_path, line, ot, old, new in msgs:
-        logging.error(f'{file_path}: {line} - {ot} NAMING ERROR: {old} should be {new}')
+    for msg in msgs:
+        if msg['type'] == 'rename':
+            logging.error('{file_path}: {line} - {object_type} NAMING ERROR: {old_token} should be {new_token}'
+                          .format(**msg))
+        if msg['type'] == 'fix_docstring':
+            logging.error('{file_path}: {line} - NAMING IN DOCSTRING ERROR'.format(**msg))
+        if msg['type'] == 'add_docstring':
+            logging.error('{file_path}: {line} - MISSING DOCSTRING ERROR'.format(**msg))
 
     if mode == 'output':
         for file_path, fixed in zip(files, results):
@@ -74,5 +80,12 @@ def main():
             with open(output_file_path, 'w') as file:
                 file.write(fixed)
         with open(os.path.join(args.output_prefix, 'fixing.log'), 'w') as file:
-            file.writelines([f'{file_path}: {line} - changed {old} to {new}\n'
-                             for file_path, line, ot, old, new in msgs])
+            lines = []
+            for msg in msgs:
+                if msg['type'] == 'rename':
+                    lines.append('{file_path}: {line} - changed {old_token} to {new_token}\n'.format(**msg))
+                if msg['type'] == 'fix_docstring':
+                    lines.append('{file_path}: {line} - fixed naming in docstring\n'.format(**msg))
+                if msg['type'] == 'add_docstring':
+                    lines.append('{file_path}: {line} - added docstring\n'.format(**msg))
+            file.writelines(lines)

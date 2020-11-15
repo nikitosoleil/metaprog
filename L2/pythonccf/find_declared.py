@@ -50,7 +50,7 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             continue
 
         if convert_next:
-            new_parsed[-1] = cur[0], TokenType.DOCSTRING, None
+            new_parsed[-1] = cur[0], TokenType.DOCSTRING, cur[2]
             convert_next = False
             def_args = []
 
