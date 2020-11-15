@@ -5,7 +5,8 @@ import logging
 
 from .process import process
 
-if __name__ == '__main__':
+
+def main():
     ap = argparse.ArgumentParser(description="A simple tool for renaming and documenting Python code according to PEP")
     ap.add_argument('-p', type=str, default=None, help="Path to project to format .py files in")
     ap.add_argument('-d', type=str, default=None, help="Directory to format .py files in")

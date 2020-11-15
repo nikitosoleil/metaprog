@@ -1,17 +1,22 @@
-# PythonCCF
+# pythonccf
 
 A simple tool for renaming and documenting Python code according to PEP
 
 ## Table of contents
 
+* [Installation](#installation)
 * [Usage](#usage)
 * [Requirements](#requirements)
 
+# Installation
+
+    pip install pythonccf
+
 # Usage
 
-    python PythonCCF.py [args]
+    pythonccf [args]
       
-    optional arguments:  
+    Arguments:  
       -h, --help            Show help message and exit  
       -p P                  Path to project to format .py files in  
       -d D                  Directory to format .py files in  
@@ -22,7 +27,7 @@ A simple tool for renaming and documenting Python code according to PEP
       
 ### Usage example
 
-    python PythonCCF.py -f examples/test*.py -o --output-prefix output
+    pythonccf -f examples/test*.py -o --output-prefix output
 
 # Requirements
 
