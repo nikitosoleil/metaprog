@@ -22,7 +22,8 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             nxt_tokens[-i - 1] = nxt_tokens[-i]
 
     declared, new_parsed = [], []
-    in_def, in_class, in_lambda, in_for, in_eq = False, False, False, False, False
+    in_def, in_class, in_lambda, in_for, in_eq, in_import, in_return_hint = \
+        False, False, False, False, False, False, False
     convert_next, append_next = False, False
     def_args = []
     balance = 0
@@ -47,6 +48,7 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
         if cur[1] == TokenType.WHITESPACE:
             if prv[0] != '\\' and '\n' in cur[0]:
                 in_eq = False
+                in_import = False
             continue
 
         if convert_next:
@@ -55,6 +57,8 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             def_args = []
 
         if cur[1] == TokenType.NOT_PARSED:
+            if '->' in cur[0]:
+                in_return_hint = True
             for c in cur[0]:
                 if c in '[{(':
                     balance += 1
@@ -69,10 +73,11 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
                 convert_next = True
             else:
                 append_next = True
+        if ':' in cur[0]:
             in_def = False
             in_class = False
-        if in_lambda and ':' in cur[0]:
             in_lambda = False
+            in_return_hint = False
         if in_for and cur[0] == 'in':
             in_for = False
 
@@ -84,11 +89,12 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             elif prv is not None and prv[0] == 'as':
                 declared.append((cur[0], ObjectType.VARIABLE))
             elif nxt is not None and not in_eq and balance == 0 and \
-                    ((nxt[0][0] == '=' and (len(nxt[0]) == 1 or nxt[0][1] not in '=<>')) or nxt[0] == ','):
+                    ((nxt[0][0] == '=' and (len(nxt[0]) == 1 or nxt[0][1] not in '=<>')) or
+                     (nxt[0] == ',' and not in_import)):
                 declared.append((cur[0], ObjectType.VARIABLE))
             elif in_lambda or in_for:
                 declared.append((cur[0], ObjectType.VARIABLE))
-            elif in_def:
+            elif in_def and not in_return_hint:
                 def_args.append(cur[0])
                 declared.append((cur[0], ObjectType.VARIABLE))
 
@@ -100,6 +106,8 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             in_lambda = True
         if cur[0] == 'for':
             in_for = True
+        if cur[0] == 'import':
+            in_import = True
 
     # print('\n'.join(f'{d[0]}, {d[1]}' for d in declared), '\n\n\n')
 

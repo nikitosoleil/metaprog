@@ -3,15 +3,19 @@ from typing import List, Tuple
 
 from .types import TokenType
 
-re_s_single_no_prefix = r"[\'\"][^\"\'\\\n]*(?:\\([ntrbfav\/\\\"\'])[^\"\'\\\n]*)*[\'\"]"
-re_s_triple_no_prefix = r"(\"\"\"|\'\'\')[^\"\'\\]*(?:\\([ntrbfav\/\\\"\'])[^\"\'\\]*)*(\"\"\"|\'\'\')"
+re_s_single_apostrophe_no_prefix = r"[\'][^\'\\\n]*(?:\\([ntrbfav\/\\\'])[^\'\\\n]*)*[\']"
+re_s_single_quotation_no_prefix = r"[\"][^\"\\\n]*(?:\\([ntrbfav\/\\\"])[^\"\\\n]*)*[\"]"
+re_s_single_no_prefix = f"({re_s_single_apostrophe_no_prefix})|({re_s_single_quotation_no_prefix})"
+
+re_s_triple_apostrophe_no_prefix = r"(\'\'\')[^\'\\]*(?:\\([ntrbfav\/\\\'])[^\'\\]*)*(\'\'\')"
+re_s_triple_quotation_no_prefix = r"(\"\"\")[^\"\\]*(?:\\([ntrbfav\/\\\"])[^\"\\]*)*(\"\"\")"
+re_s_triple_no_prefix = f"({re_s_triple_apostrophe_no_prefix})|({re_s_triple_quotation_no_prefix})"
+
 re_s_single = r"[bru]?" + re_s_single_no_prefix
 re_s_triple = r"[bru]?" + re_s_triple_no_prefix
-# TODO: separate quote and apostrophe
 
 re_s_single_f_prefix = "f" + re_s_single_no_prefix
 re_s_triple_f_prefix = "f" + re_s_triple_no_prefix
-# TODO: make use of *_f_prefix
 
 re_comments = r"#.*\n"
 re_whitespaces = r"\s+"
