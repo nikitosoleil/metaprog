@@ -106,7 +106,7 @@ def main():
 
     if mode == 'output':
         for output_file_path, file_path, fixed in zip(output_files, files, results):
-            output_file_folder = os.sep.join(output_file_path.split(os.sep)[:-1])
+            output_file_folder = os.path.join(*os.path.split(output_file_path)[:-1])
             os.makedirs(output_file_folder, exist_ok=True)
             with open(output_file_path, 'w') as file:
                 file.write(fixed)

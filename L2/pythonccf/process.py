@@ -51,7 +51,8 @@ def process(all_contents: List[str], files: List[str]) -> (List[str], List):
 
     all_declared = {}
     all_new_parsed = []
-    for parsed in all_parsed:
+    for parsed, file in zip(all_parsed, files):
+        # print('\n', file, '\n')
         declared, new_parsed = find_declared(parsed)
         all_new_parsed.append(new_parsed)
         for s, ot in declared:
