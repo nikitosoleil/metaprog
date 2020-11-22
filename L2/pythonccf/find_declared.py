@@ -52,7 +52,16 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             continue
 
         if convert_next:
-            new_parsed[-1] = cur[0], TokenType.DOCSTRING, cur[2]
+            end_trio = cur[0][-3:]
+            s = cur[0][:-3]
+            indent_len = len(s) - len(s.replace('\n', '#').strip())
+            indent = s[-indent_len:]
+            for arg in def_args:
+                if arg not in s:
+                    s += f':param {arg}:\n' + indent
+            s += end_trio
+
+            new_parsed[-1] = s, TokenType.DOCSTRING, cur[2]
             convert_next = False
             def_args = []
 
