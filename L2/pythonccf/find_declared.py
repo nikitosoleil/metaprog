@@ -22,7 +22,7 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
             nxt_tokens[-i - 1] = nxt_tokens[-i]
 
     declared, new_parsed = [], []
-    in_def, in_lambda, in_for, in_eq = False, False, False, False
+    in_def, in_class, in_lambda, in_for, in_eq = False, False, False, False, False
     convert_next, append_next = False, False
     def_args = []
     balance = 0
@@ -64,12 +64,13 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
                 if c == '=':
                     in_eq = True
 
-        if in_def and ':' in cur[0]:  # TODO: consider dicts as default argument values
+        if (in_def or in_class) and ':' in cur[0]:  # TODO: consider dicts as default argument values
             if nxt[1] == TokenType.TRIPLE_STRING:
                 convert_next = True
             else:
                 append_next = True
             in_def = False
+            in_class = False
         if in_lambda and ':' in cur[0]:
             in_lambda = False
         if in_for and cur[0] == 'in':
@@ -93,6 +94,8 @@ def find_declared(parsed: List[Tuple[str, TokenType, int]]) -> (List[Tuple[str, 
 
         if cur[0] == 'def':
             in_def = True
+        if cur[0] == 'class':
+            in_class = True
         if cur[0] == 'lambda':
             in_lambda = True
         if cur[0] == 'for':
