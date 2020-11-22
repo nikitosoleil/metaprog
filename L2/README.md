@@ -34,8 +34,9 @@ A simple tool for renaming and documenting Python code according to PEP
 
 - Verifies and converts class names to CamelCase
 - Verifies and converts function and variable names to snake_case
+- Verifies and converts file and directory names in project to snake_case
 - Updates usages of renamed objects in code and docstrings
-- Adds docstring templates for functions and methods in reStructured Text format
+- Adds docstring templates for functions, methods and classes in reStructured Text format
 
 # Requirements
 
