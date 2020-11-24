@@ -2,6 +2,7 @@ import argparse
 import glob
 import os
 import logging
+import shutil
 
 from .process import process, rename, ObjectType
 
@@ -14,6 +15,7 @@ def main():
     ap.add_argument('-v', '--verify', action='store_true', help="Verify object names and documentation")
     ap.add_argument('-o', '--output', action='store_true', help="Output fixed files")
     ap.add_argument('--output-prefix', type=str, default='.', help="Output path prefix")
+    ap.add_argument('--no-delete', action='store_true', help="Leave old files and directories")
     args = ap.parse_args()
 
     os.makedirs(args.output_prefix, exist_ok=True)
@@ -66,28 +68,43 @@ def main():
     results, msgs = process(all_contents, files)
 
     output_files = []
+    to_rename = []
     for file_path in files:
         if arg == 'p':
-            splits = os.path.split(file_path)
+            splits = os.path.normpath(file_path).split(os.sep)
+            input_splits = []
             output_splits = []
             for i, s in enumerate(splits):
                 out_s = rename(s, ObjectType.FUNCTION)
+                input_splits.append(s)
+                output_splits.append(out_s)
                 if out_s != s:
                     if i == len(splits) - 1:
+                        if not args.no_delete and os.path.exists(file_path):
+                            os.remove(file_path)
                         msgs.append({'type': 'rename_file',
                                      'old_file': s,
                                      'new_file': out_s})
                     else:
+                        if not args.no_delete:
+                            cur_input_path = os.path.join(*input_splits)
+                            cur_output_path = os.path.join(args.output_prefix, *(input_splits[:-1] + [out_s]))
+                            to_rename.append((i, cur_input_path, cur_output_path))
                         msgs.append({'type': 'rename_directory',
                                      'old_dir': s,
                                      'new_dir': out_s})
-                output_splits.append(out_s)
 
             output_file_path = os.path.join(args.output_prefix, *output_splits)
         else:
             output_file_path = os.path.join(args.output_prefix, file_path)
 
         output_files.append(output_file_path)
+
+    to_rename.sort(key=lambda x: x[0], reverse=True)
+
+    for i, input_path, output_path in to_rename:
+        if os.path.isdir(input_path):
+            shutil.move(input_path, output_path)
 
     msgs = [m for i, m in enumerate(msgs) if m not in msgs[:i]]
 
@@ -106,7 +123,7 @@ def main():
 
     if mode == 'output':
         for output_file_path, file_path, fixed in zip(output_files, files, results):
-            output_file_folder = os.path.join(*os.path.split(output_file_path)[:-1])
+            output_file_folder = os.path.split(output_file_path)[0]
             os.makedirs(output_file_folder, exist_ok=True)
             with open(output_file_path, 'w') as file:
                 file.write(fixed)

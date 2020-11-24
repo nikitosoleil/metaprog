@@ -9,7 +9,7 @@ setup(
     entry_points={
         "console_scripts": ['pythonccf = pythonccf.pythonccf:main']
     },
-    version='0.1.8',
+    version='0.2.0',
     description="A simple tool for renaming and documenting Python code according to PEP",
     long_description=long_description,
     long_description_content_type='text/markdown',
